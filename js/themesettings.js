@@ -23,6 +23,12 @@ function showThemeSettings() {
 			    $(this).siblings().show(); //safety, if user scaled/rotated the screen.
 			}
 	    	});
+		$('#acceptnewhardwaretable > tbody > tr:nth-child(1) > td > button').click(function() {
+			notify(language.allow_new_hardware, 2);
+		});
+		$('#tabs > li.pull-right > a').click(function() {			
+			notify(language.domoticz_settings_saved, 2);
+		});
 		// Translate
 		$("#tabs").i18n();
 
@@ -74,14 +80,15 @@ function loadSettingsHTML(){
         	var value = theme[this.name];
         	$(this).val(value);
 	});
+	$('#tabtheme input[type="text"]').each(function(){    
+        	var value = theme[this.name];
+        	$(this).val(value);
+	});
 	
 	// The theme immediately saves the changes.
 	$("#tabtheme input:checkbox").click(function() {
 		if ($(this).is(':checked')) {
 			theme.features[this.value].enabled = true;
-			if (this.value === "custom_settings_menu" && theme.features.custom_settings_menu.enabled === true) {
-				bootbox.alert('<h3>Information!</h3><br/><p>This also disables the custom menu. Navbar looks better with disabled custom menu.</p>');
-			}
 			loadThemeFeatureFiles(this.value);
 		} else {
 			// if a parent checkbox is unchecked, let's also take care of the child checkbox. Otherwise features can still be turned on, but this might not be visible or obvious to the user.
@@ -123,13 +130,19 @@ function loadSettingsHTML(){
 			var value = $(this).val();
 			theme[this.name] = value; 
 		});
+		$('#tabtheme input[type="text"]').each(function(){    
+			var value = $(this).val();
+			theme[this.name] = value; 
+		});
 		localStorage.setObject("themeSettings", theme);
-		console.log(themeName + ' - theme settings saved');
+		//console.log(themeName + ' - theme settings saved');
+		notify(language.theme_settings_saved, 2);
 		location.reload();
 	});
 	
 	// Resetbutton theme tab
 	$('#themeResetButton').click(function() {
+		notify(language.theme_restored, 2);
 		resetTheme();
 	});
 }
@@ -158,7 +171,7 @@ function loadSettings() {
 // reset theme to defaults. Useful after an upgrade.
 function resetTheme(){
     if (typeof(Storage) !== "undefined") {
-		localStorage.clear();
+		localStorage.removeItem('themeSettings');
 		location.reload();    
     }
 }
