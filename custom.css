@@ -609,9 +609,6 @@ body table#itemtable tr > .options {
   overflow-x: auto;
 
 }
-#type .ui-selectmenu-text {
-color:var(--main-blue-color)
-}
 
 /* Time Ago */
 #dashcontent #timeago{
@@ -732,6 +729,7 @@ dzweatherwidget #status {
 .statusProtected .dimslider {
   background: rgba(0, 0, 0, 0.26);
   border: none;
+  border-radius: 3px;
   box-shadow: none;
   height: 5px;
   bottom: 50px;
@@ -1200,7 +1198,9 @@ input#AcceptNewHardware:checked ~ button {
 
 .ui-corner-all {
   background: none;
-  border-radius: 0;
+  border-radius: 6px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
   border: none;
   border-bottom: 1px solid var(--main-blue-color);
 }
@@ -1213,6 +1213,7 @@ input#AcceptNewHardware:checked ~ button {
   background: transparent;
   background-color: #f1f1f1;
   color: #1a1a1a;
+  font-family: main-font;
 }
 
 #offline {
@@ -1813,4 +1814,33 @@ padding-bottom:1px;
   .container-fluid{padding: 0 !important;margin: 0 !important;}
 }
 
+/* Selector */
+.ui-menu-item-wrapper.ui-state-active {
+    background: var(--main-blue-color);
+    border: 0; 
+    font-weight: normal;
+}
+
+.ui-selectmenu-button-open {
+    background: var(--main-blue-color);
+    border-color: var(--main-blue-color);
+}
+
+.ui-button:hover, .ui-button:focus {
+    background: var(--main-blue-color);
+    border-color: var(--main-blue-color);
+    outline: none;
+}
+
+.ui-selectmenu-text {
+    color:var(--main-blue-color);
+    font-family: main-font;
+}
+
+.ui-button:hover > .ui-selectmenu-text, .ui-button:focus > .ui-selectmenu-text, .ui-selectmenu-button-open > .ui-selectmenu-text {
+    color: var(--main-item-bg-color) !important;
+}
+
+.selectorlevels-menu {
+    border-color:  var(--main-blue-color) !important;
 }
