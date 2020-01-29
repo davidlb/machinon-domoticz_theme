@@ -1,176 +1,214 @@
-/* Custom.js for machinon theme */
-
-var theme = {}, themeName = "", baseURL = "", switchState = {}, isMobile, newVersionText = "", gitVersion, lang, user, themeFolder, checkUpdate;
+var theme = {}, themeName = "", baseURL = "", switchState = {}, isMobile, newVersionText = "", gitVersion, lang, user, themeFolder, checkUpdate, userVariableThemeLoaded = false;
 generate_noty = void 0;
 isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+var msgCount = 0;
+var supported_lang = "en fr de sv nl pl";
 
-// load files
-$.ajax({url:"json.htm?type=settings", cache: false, async: false, dataType:"json", success:function(b) {
-  lang = b.Language;
-  themeFolder = b.WebTheme;
-  user = b.WebUserName;
-  checkUpdate = b.UseAutoUpdate;
-}});
-$.ajax({url:"acttheme/js/notify.js", async: false, dataType:"script"});
-$.ajax({url:"acttheme/js/themesettings.js", async: false, dataType:"script"});
-$.ajax({url:"acttheme/js/functions.js", async: false, dataType:"script"});
-$.ajax({url:"acttheme/js/time_ago.js", async: false, dataType:"script"});
-0 <= "en fr de sv nl pl".split(" ").indexOf(lang) ? $.ajax({url:"acttheme/lang/machinon." + lang + ".js", async: false, dataType:"script"}) : $.ajax({url:"acttheme/lang/machinon.en.js", async: false, dataType:"script"});
-checkauth();
-//need more simplycity
-if (!isMobile){ 
-var targetedNode = document;
-MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
-var observer = new MutationObserver(function(mutations, observer) {
-	mutations.forEach(function(mutation) {	
-		if ($('#main-view').contents().hasClass('container') ) {
-			$('#main-view').contents().removeClass('container').toggleClass('container-fluid');
-			console.log('change container class to container-fluid');
-			var changeclass = true
-		};
-		
-		if ($('#main-view div.row').next().length != 0 ){
-			DelRow();
-		} else {
-			//console.log{'1 row found'};
-			var delrowok = true
-		};
-		$('#main-view div.row.divider .span4').toggleClass('span4 tile');
-		if (delrowok && changeclass){
-			console.log('deconnexion observer');
-			//observer.disconnect();
-			
-		};
-	});
+$.ajax({
+    url: "acttheme/js/moment.js",
+    async: false,
+    dataType: "script",
 });
 
-window.onhashchange = locationHashChanged;
+$.ajax({
+    url: "acttheme/js/livestamp.js",
+    async: false,
+    dataType: "script"
+});
+
+$.ajax({
+    url: "acttheme/js/notify.js",
+    async: false,
+    dataType: "script"
+});
+
+fetch('json.htm?type=settings', {
+    method: 'GET',
+    headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+    },
+    credentials: 'include'
+}).then(response => {
+    return response.json();
+}).then(data => {
+    lang = (0 <= supported_lang.split(" ").indexOf(data.Language)) ?data.Language : 'en';
+    themeFolder = data.WebTheme;
+    user = data.WebUserName;
+    checkUpdate = data.UseAutoUpdate;
+
+    /* Load required script files and then init the theme */
+    $.when(
+        $.getScript("acttheme/js/themesettings.js"),
+        $.getScript("acttheme/js/functions.js"),
+        $.getScript("acttheme/js/devices.js"),
+        $.getScript("acttheme/lang/machinon." + lang + ".js"),
+        $.Deferred(function(deferred) {
+            $(deferred.resolve);
+        })
+    ).done(function() {
+        moment.locale(lang);
+        init_theme();
+    });
+}).catch(error => {
+    console.error(error);
+});
+
+function init_theme() {
+    checkUserVariableThemeSettings();
+    loadSettings();
+
+    window.onhashchange = locationHashChanged;
+
+    /* Set $scope variable when angular is available */
+    var $scope = null;
+    checkAngular = setInterval(function() {
+        if (($scope === null) && (typeof angular !== "undefined") && (typeof angular.element(document.body).injector() !== "undefined")) {
+            clearInterval(checkAngular);
+            $scope = angular.element(document.body).injector().get('$rootScope');
+
+            /* Check Domoticz version */
+            var dom_ws_version = 11330;
+            var current_version = parseInt($scope.config.appversion.split(".")[1]);
+            if (current_version < dom_ws_version) {
+                console.warn("To be fully working, this theme requires to run Domoticz version " + dom_ws_version + " minimum -- Your version is " + current_version);
+            }
+
+            $scope.$on('jsonupdate', function (event, data) {
+                if (theme.features.notification.enabled === true && $("#msg").length == 0) {
+                    displayNotifications();
+                }
+                if (data.title === "Devices") {
+                    if (data.item.Type === "Light/Switch") {
+
+                        setDeviceOpacity(data.item.idx, data.item.Status);
+                        if (theme.features.icon_image.enabled === true) {
+                            /* We have to delay it a few otherwise it's get overwritten by standard icon */
+                            setTimeout(setDeviceCustomIcon, 10, data.item.idx, data.item.Status);
+                        }
+                        if (theme.features.switch_instead_of_bigtext.enabled === true && data.item.SwitchType === "On/Off") {
+                            setDeviceSwitch(data.item.idx, data.item.Status);
+                        }
+                    }
+                    if (data.item.Type.startsWith("Temp") || (data.item.Type === "Wind")) {
+                        /* Temp/Wind widgets are all refreshed, we need to format them again after a delay */
+                        setTimeout(function() {
+                            $("dzweatherwidget[id='" + data.item.idx + "']").find("tbody > tr").each(function() {
+                                $(this).attr("data-idx", data.item.idx);
+                            });
+                            $("dztemperaturewidget[id='" + data.item.idx + "']").find("tbody > tr").each(function() {
+                                $(this).attr("data-idx", data.item.idx);
+                            });
+                            setDeviceOptions(data.item.idx);
+                            let lastupd = moment(data.item.LastUpdate, ["YYYY-MM-DD HH:mm:ss", "L LT"]).format();
+                            setDeviceLastUpdate(data.item.idx, lastupd);
+                        }, 10);
+                    }
+                    if (data.item.Type === "Wind") {
+                        if (theme.features.wind_direction.enabled === true) {
+                            /* We have to delay it a few otherwise it's get overwritten by standard icon */
+                            setTimeout(setDeviceWindDirectionIcon, 10, data.item.idx, data.item.DirectionStr);
+                        }
+                    }
+                    setTimeout(function() {
+                        let lastupd = moment(data.item.LastUpdate, ["YYYY-MM-DD HH:mm:ss", "L LT"]).format();
+                        setDeviceLastUpdate(data.item.idx, lastupd);
+                        setAllDevicesIconsStatus();
+                    }, 10);
+                } else {
+                    // Other ? Notification ?
+                    console.debug("Other event --> " + data);
+                }
+            }, function errorCallback(response) {
+                console.error("Cannot connect to websocket");
+            });
+
+            $scope.$on('scene_update', function (event, data) {
+                if (theme.features.switch_instead_of_bigtext_scenes.enabled === true) {
+                    setDeviceSwitch(data.item.idx, data.item.Status);
+                }
+                let lastupd = moment(data.item.LastUpdate, ["YYYY-MM-DD HH:mm:ss", "L LT"]).format();
+                setDeviceLastUpdate(data.item.idx, lastupd);
+                setDeviceOpacity(data.item.idx, data.item.Status);
+            }, function errorCallback(response) {
+                console.error("Cannot connect to websocket");
+            });
+        }
+    }, 100);
+
+    $(document).ready(function() {
+        if (!isMobile) {
+            MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    $("#main-view").children("div.container").removeClass("container").addClass("container-fluid");
+                    removeRowDivider();
+                });
+            });
+            var targetNode = document.getElementById("holder");
+            observer.observe(targetNode, {
+                childList: true,
+                subtree: true
+            });
+        }
+        enableThemeFeatures();
+        setLogo();
+        setSearch();
+        setDevicesNativeSelectorForMobile();
+        locationHashChanged();
+
+        $(document).ajaxSuccess(ajaxSuccessCallback);
+
+        if (checkUpdate != 0) checkDomoticzUpdate(true);
+
+        if (theme.background_img && theme.background_img.length) {
+            if (theme.background_img.startsWith("http")) {
+                bg_url = theme.background_img;
+            } else {
+                bg_url = "../images/" + theme.background_img;
+            }
+            $("html").addClass(theme.background_type);
+            $("html").css("background-image", "url(" + bg_url + ")");
+            $("body").css("cssText", "background: transparent !important");
+        }
+        $("#cSetup").click(function() {
+            showThemeSettings();
+        });
+
+        $(".navbar").append('<div class="menu-toggle"><div></div></div>')
+        var navBarInner = $(".navbar-inner"), navBarToggle = $(".menu-toggle");
+        $(".menu-toggle").prop("title", language.mainmenu);
+        navBarToggle.click(function() {
+            navBarInner.toggleClass("slide");
+        });
+        navBarInner.find(".container li").not(".dropdown").not(".dropdown-submenu").click(function() {
+            navBarInner.removeClass("slide");
+        });
+        $("#holder").click(function() {
+            navBarInner.removeClass("slide");
+        });
+        $(window).scroll(function() {
+            50 < $(this).scrollTop() ? $("div.menu-toggle").addClass("scrolled") : $("div.menu-toggle").removeClass("scrolled");
+        });
+        if (theme.features.navbar_icons_text.enabled !== false) {
+            $(".navbar").addClass("notext");
+        }
+
+        if (theme.features.notification.enabled === true) {
+            $('<div id="notify"></div>').appendTo(".container-logo");
+            $('<i id="notyIcon" class="ion-ios-notifications-outline lcursor"></i>').appendTo("#notify").hide();
+            var existingNotes = localStorage.getItem(themeFolder + ".notify");
+            existingNotes && $("#notyIcon").show();
+            var state = false;
+            $("#notify").click(function() {
+                if (!state) {
+                    $("#msg").show();
+                } else {
+                    $("#msg").remove();
+                    msgCount = 0;
+                }
+                state = !state;
+            });
+        }
+    });
 }
-document.addEventListener('DOMContentLoaded', function () {
-
-});
-
-(function() {
-
-	$( document ).ready(function() {
-		if (!isMobile){ 
-		observer.observe(targetedNode, {
-			childList: true,
-			subtree: true
-		});
-		}
-		requirejs.config({ waitSeconds: 30 });
-		// function adds the theme tab
-		showThemeSettings();
-		// load theme settings
-		loadSettings();
-		enableThemeFeatures();
-		if (checkUpdate != 0)CheckDomoticzUpdate(true);
-		getStatus(true);
-			
-		// Replace settings dropdown button to normal button.
-		true === theme.features.custom_settings_menu.enabled ? $.ajax({url:"acttheme/js/settings_page.js", async: false, dataType:"script"}) : $("#cSetup").click(function() {
-		  showThemeSettings();
-		  loadSettings();
-		  enableThemeFeatures();
-		});
-        
-		// insert config-forms menu item into main navigation
-		true === theme.features.custom_page_menu.enabled && $.ajax({url:"acttheme/js/custom_page.js", async: false, dataType:"script"});
-		isMobile && adminRights && 992 >= window.innerWidth && $("#appnavbar").append('<li id="mLogout"><a id="cLogout" href="#Logout"><img src="images/logout.png"><span class="hidden-phone hidden-tablet" data-i18n="Logout">Logout</span></a></li>');
-		
-		// Navbar menu and logo header
-		var navBar = $(".navbar").append('<button class="menu-toggle"></button>'), navBarInner = $(".navbar-inner"), navBarToggle = $(".menu-toggle");
-		navBarToggle.click(function() {
-		  navBarInner.toggle("slide", 500);
-		});
-		(isMobile && 992 >= window.innerWidth || !isMobile && 992 >= window.innerWidth) && $(".navbar-inner a").click(function() {
-		  $(".navbar-inner").toggle("slide", 500);
-		});
-		$(window).scroll(function() {
-		  50 < $(this).scrollTop() ? $("button.menu-toggle").css("background-color", "var(--main-blue-color)") : $("button.menu-toggle").css("background-color", "");
-		});
-
-		let containerLogo = '<header class="logo"><div class="container-logo">';
-		if (theme.logo.length == 0) {
-			containerLogo += '<img class="header__icon" src="images/logo.png">';
-			$('<style>#login:before {content: url(../images/logo.png) !important;}</style>').appendTo('head');
-		}else {
-			containerLogo += '<img class="header__icon" src="images/' + theme.logo + '"';
-			$('<style>#login:before {content: url(../images/'+ theme.logo + ') !important;}</style>').appendTo('head');
-		}
-		containerLogo += '</div></header>';
-		$(containerLogo).insertBefore('.navbar-inner');
-		
-		// Searchbar		
-		$('<input type="text" id="searchInput" onkeyup="searchFunction()" placeholder="' + language.type_to_search + '" title="' + language.type_to_search + '">').appendTo('.container-logo');
-		
-		// Notifications
-		$('<div id="notify"></div>').appendTo('.container-logo');
-		$('<img id="notyIcon" src="images/notify.png"/>').appendTo('#notify').hide();
-		var existingNotes = localStorage.getItem('notify');
-		existingNotes && $("#notyIcon").show()
-		var state = false;
-		$('#notify').click(function(){
-			if(!state){
-				if ($('#msg').length == 0) {
-					var msg = localStorage.getItem('notify');
-					msg = JSON.parse(msg);
-					var myObj = msg;
-					$('#notify').append('<div id="msg" class="msg"><ul></ul><center><a class="btn btn-info" onclick="clearNotify();">' + $.t('Clear') + '</a></center></div>');
-					for (x in myObj) {
-						$('#msg ul').append('<li>' + x + '<span> -- ' + jQuery.timeago(myObj[x]) + '</span></li>');
-					}
-				}
-			} else {
-			$('#msg').remove();
-			}
-			state = !state;		
-		});
-		
-		// Features
-		if (theme.features.footer_text_disabled.enabled === true) {
-			$('#copyright').remove();
-		}
-		if (theme.features.dashboard_show_last_update.enabled === true) {
-			$('<style>#dashcontent #lastupdate{display: block;}</style>').appendTo('head');
-			$('<style>#dashcontent #timeago{display: block;}</style>').appendTo('head');
-		}
-			
-		$(document).ajaxSuccess(function (event, xhr, settings) {
-			if (settings.url.startsWith('json.htm?type=devices') ||
-				settings.url.startsWith('json.htm?type=scenes')) {
-				let counter = 0;
-				let intervalId = setInterval(function () {
-					// console.log("Check DOM");
-					if ($('#main-view').find('.item').length > 0) {
-						applySwitchersAndSubmenus();
-						clearInterval(intervalId);
-					} else {
-						counter++;
-						if (counter >= 5) {
-							clearInterval(intervalId);
-						}
-					}
-				}, 1000);
-			} else if (settings.url.startsWith('json.htm?type=command&param=switchscene')) {
-				let id = settings.url.split('&')[2];
-				id = id.substr(4); // from string 'idx=?'
-				let scene = $('.item#' + id);
-				let statusElem = scene.find('#status .wrapper');
-				statusElem.hide();
-				let switcher = statusElem.parent().siblings('.switch').find('input');
-				if (switcher.length) {
-					let statusText = settings.url.split('&')[3];
-					statusText = statusText.substr(10); // from string 'switchcmd=?'
-					switcher.attr('checked', (statusText == 'On'));
-				}
-			}
-		});
-
-	});
-	window.onresize = function() {
-		var nav = $(".navbar-inner");
-		null !== nav && (992 < window.innerWidth ? nav.css("display", "block") : nav.css("display", "none"));
-	};
-})();

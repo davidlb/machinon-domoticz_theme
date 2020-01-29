@@ -1,22 +1,4 @@
  // German
- 
-jQuery.timeago.settings.strings = {
-    prefixAgo: "vor",
-    prefixFromNow: "in",
-    suffixAgo: "",
-    suffixFromNow: "",
-    seconds: "wenigen Sekunden",
-    minute: "etwa einer Minute",
-    minutes: "%d Minuten",
-    hour: "etwa einer Stunde",
-    hours: "%d Stunden",
-    day: "etwa einem Tag",
-    days: "%d Tagen",
-    month: "etwa einem Monat",
-    months: "%d Monaten",
-    year: "etwa einem Jahr",
-    years: "%d Jahren"
-};
 language = {
   is_available: "is available",
   click_here: "Click here to download",
@@ -27,5 +9,13 @@ language = {
   theme_restored: "Theme restored",
   allow_new_hardware: "Allow new hardware for 5 min",
   is: "is",
-  timedout: "timed out"
+  timedout: "timed out",
+  mainmenu: "Main menu",
+  you_have: "You have",
+  messages: "message(s)",
+  warning: "Warning",
+  storage_removed: "Localstorage removed",
+  clear_localstorage: "Clear browser storage",
+  resetTheme_message: "Do you want to reset the theme to default settings, or just clear browser storage"
 };
+

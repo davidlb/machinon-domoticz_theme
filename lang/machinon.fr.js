@@ -1,29 +1,20 @@
 // French
-
-jQuery.timeago.settings.strings = {
-	prefixAgo: "il y a",
-	prefixFromNow: "d'ici",
-	seconds: "moins d'une minute",
-	minute: "environ une minute",
-	minutes: "environ %d minutes",
-	hour: "environ une heure",
-	hours: "environ %d heures",
-	day: "environ un jour",
-	days: "environ %d jours",
-	month: "environ un mois",
-	months: "environ %d mois",
-	year: "un an",
-	years: "%d ans"
-};
 language = {
   is_available: "est disponible",
   click_here: "Download",
   update_now: "Mettre à jour maintenant",
-  type_to_search: "Rechercher / Filtrer",
-  domoticz_settings_saved: "Paramètres Domoticz enregistrés",
+  type_to_search: "Filtrer",
+  domoticz_settings_saved: "Paramètres enregistrés",
   theme_settings_saved: "Paramètres du thème enregistrés",
-  theme_restored: "Thème réinitialiser",
-  allow_new_hardware: "Autoriser le nouveau matériel pendant 5 min",
+  theme_restored: "Thème réinitialisé",
+  allow_new_hardware: "Autoriser l'ajout de matériel pendant 5 min",
   is: "est",
-  timedout: "timed out"
+  timedout: "expiré",
+  mainmenu: "Menu principal",
+  you_have: "Vous avez",
+  messages: "message(s)",
+  warning: "Attention",
+  storage_removed: "Stockage local supprimé",
+  clear_localstorage: "Vider le cache du navigateur",
+  resetTheme_message: "Voulez-vous réinitialiser le thème ou vider le cache du navigateur ?"
 };

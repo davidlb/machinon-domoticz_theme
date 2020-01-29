@@ -1,405 +1,252 @@
-/* functions.js */
-
-// main switchers and submenus logic function
-function applySwitchersAndSubmenus() {
-	
-	//translate switchstates
-	switchState = {
-	on: $.t('On'),
-	off: $.t('Off'),
-	open: $.t('Open'),
-	closed: $.t('Closed')
-	};
-	
-	//switcher for lights and windows
-	$('#main-view .item').each(function () {
-		let bigText = $(this).find('#bigtext');
-		let status = bigText.text();
-		// get clickable image element
-		let onImage = bigText.siblings('#img').find('img');
-		if (onImage.length == 0) {
-			onImage = bigText.siblings('#img1').find('img')
-		}
-		if (theme.features.fade_offItems.enabled === true) {
-        	if (status == switchState.off) {
-        		if (theme.features.dark_theme.enabled === true) {
-        			$(this).css('opacity', '0.5');
-        		} else {
-        			$(this).css('opacity', '0.6');
-        		}
-        	} else {
-        		$(this).css('opacity', '');
-        	}
-        	}                   
-		if (status.length == 0) {
-			status = bigText.attr('data-status');
-		} else {
-			$(this).off('click', '.switch');
-			// special part for scenes tab
-			let isScenesTab = $(this).parents('#scenecontent').length > 0;
-			if (isScenesTab) {
-				$(this).on('click', '.switch', function (e) {
-					e.preventDefault();
-					let offImage = $(this).siblings('#img2').find('img');
-					let subStatus = bigText.siblings('#status').find('span').text();
-					if ($.trim(subStatus).length) {
-						status = subStatus;
-					}
-					if ((status == switchState.on) && offImage.length) {
-						offImage.click();
-					} else {
-						if (onImage.hasClass('lcursor')) {
-							onImage.click();
-						}
-					}
-				});
-			} else {
-				$(this).one('click', '.switch', function (e) {
-					e.preventDefault();
-					let offImage = $(this).siblings('#img3').find('img');
-					if (offImage.length == 0) {
-						offImage = $(this).siblings('#img2').find('img');
-					}
-					if ((status == switchState.open || status == switchState.on) && offImage.length) {
-						offImage.click();
-					} else {
-						if(onImage.hasClass('lcursor')) {
-							onImage.click();
-						}
-					}
-					
-				});
-			}
-		}
-		if (theme.features.time_ago.enabled === true ) {
-			let lastupdated = $(this).find('#timeago');
-			let xyz = $(this).find('#lastupdate');
-			if (lastupdated.length == 0) {
-				$(this).find('table tbody tr').append('<td id="timeago" class="timeago"></td>');
-				$(this).find('#lastupdate').hide();
-				}
-			$(this).find("#timeago").timeago("update", xyz.text());
-			}else{
-			if ($(this).find('#lastSeen').length == 0) {
-				$(this).find('#lastupdate').prepend('<t id="lastSeen">' + $.t('Last Seen')+': </t>')
-			}
-		}
-		// insert submenu buttons to each item table (not on dashboard)
-		let subnav = $(this).find('.options');
-		let subnavButton = $(this).find('.options__bars');
-		if (subnav.length && subnavButton.length == 0) {
-			$(this).find('table').append('<div class="options__bars" title="' + $.t('More options') + '"></div>');
-			$(this).on('click', '.options__bars', function (e) {
-			e.preventDefault();
-			$(this).siblings('tbody').find('td.options').slideToggle(400);
-			});
-			// Move Timers and log to item
-			$(this).find('table').append('<div class="timers_log"></div>');
-			$(this).find('.timers_log').append($(this).find('.options .btnsmall[data-i18n="Log"]'));
-			$(this).find('.timers_log .btnsmall[data-i18n="Log"]').append("<img id='logImg' title='" + $.t('Log') + "' src='images/options/log.png'/>");
-			$(this).find('.timers_log').append($(this).find('.options .btnsmall[data-i18n="Timers"]'));
-			$(this).find('.timers_log .btnsmall[data-i18n="Timers"]').append("<img id='timerOffImg' title='" + $.t('Timers') + "' src='images/options/timer_off.png' height='18' width='18'/>");
-			$(this).find('.timers_log').append($(this).find('.options .btnsmall-sel[data-i18n="Timers"]'));
-			$(this).find('.timers_log .btnsmall-sel[data-i18n="Timers"]').append("<img id='timerOnImg' title='" + $.t('Timers') + "' src='images/options/timer_on.png' height='18' width='18'/>");
-			$(this).find('.timers_log').append($(this).find('.options .btnsmall[href*="Log"]'));
-			$(this).find('.timers_log .btnsmall[href*="Log"]:not(.btnsmall[data-i18n="Log"])').append("<img id='logImg' title='" + $.t('Log') + "' src='images/options/log.png'/>");
-		}
-		if ($('#dashcontent').length == 0) {
-			let item = $(this).closest('.item');
-			var itemID = item.attr('id');
-			if (typeof(itemID) === 'undefined') {
-				itemID = item[0].offsetParent.id;
-			}
-			let type = $(this).find('#idno');
-			if (type.length == 0) {
-				$(this).find('.options').append('<a class="btnsmall" id="idno"><i>Idx: ' + itemID + '</i></a>');
-			}
-		}
-		// options to not have switch instaed of bigText on scene devices
-		let switchOnScenes = false;
-		let switchOnScenesDash = false;
-		if (theme.features.switch_instead_of_bigtext_scenes.enabled === false){
-			switchOnScenes = $(this).parents('#scenecontent').length > 0
-			switchOnScenesDash = $(this).find('#itemtablesmalldoubleicon').length > 0
-		}
-		if (theme.features.switch_instead_of_bigtext.enabled === true ) {
-			if (!switchOnScenes){
-				if(!switchOnScenesDash){
-					if (onImage.hasClass('lcursor')) {
-					let switcher = $(this).find('.switch');
-					if (status == switchState.off || status == switchState.on) {
-						let title = (status == switchState.off) ? $.t('Turn On') : $.t('Turn Off');
-						let checked = (status == switchState.on) ? 'checked' : '';
-						if (switcher.length == 0) {
-							let string = '<label class="switch" title="' + title + '"><input type="checkbox"' + checked + '><span class="slider round"></span></label>';
-							bigText.after(string);
-						}
-						switcher.attr('title', title);
-						switcher.find('input').attr('checked', checked.length > 0);
-						bigText.css('display', 'none');
-					} else if (status == switchState.open || status == switchState.closed) {
-						let title = (status == switchState.closed) ? $.t('Open Blinds') : $.t('Close Blinds');
-						let checked = (status == switchState.open) ? 'checked' : '';
-						if (switcher.length == 0) {
-							let string = '<label class="switch" title="' + title + '"><input type="checkbox"' + checked + '><span class="slider round"></span></label>';
-							bigText.after(string);
-						}
-						switcher.attr('title', title);
-						switcher.find('input').attr('checked', checked.length > 0);
-						bigText.css('display', 'none');
-					} else {
-						bigText.css('display', 'block');
-						switcher.remove();
-					}
-					bigText.attr('data-status', status);
-					} else {
-					bigText.css('display', 'block');
-					}
-				}
-			}
-		}
-	});
-	// console.log('Switchers loaded');
-}
-
-function enableThemeFeatures()
-{
-    // load all JS and CSS files
-    $.each(theme.features, function(key,feature){
-        if(feature.enabled === true){
-            if(feature.files.length > 0){
-                loadThemeFeatureFiles(key);
+function removeRowDivider() {
+    if ($("#dashcontent").length) {
+        $("#dashcontent > section").each(function() {
+            $("div.row.divider:not(:first)", this).children().appendTo($(this).find("div.row.divider:first"));
+            if ($("div.row.divider:first > div:first", this).hasClass("span3")) {
+                $("div.row.divider:first", this).parent().addClass("compact");
             }
-        }
-    });
-      
-    console.log(themeName + " - feature files is loaded.");
-    loadedThemeCSSandJS = true;
-}
-
-function loadThemeFeatureFiles(featureName) {
-   
-    // get file list from theme settings object
-    var files = theme.features[featureName].files;
-    var arrayLength = files.length;
-    for (var i = 0; i < arrayLength; i++) {
-        if(files[i].split('.').pop() == "js"){
-            console.log(themeName + " - Loading javascript for " + featureName + " feature");
-            var getviarequire = "../acttheme/js/" + featureName;
-            requirejs([getviarequire], function(util) {
-                console.log(themeName + " - Javascript loaded by RequireJS");
-            });
-        }
-        if(files[i].split('.').pop() == "css"){
-            var CSSfile = "acttheme/css/" + files[i] + "?" + themeName;
-            var fileref = document.createElement("link");
-            fileref.setAttribute("rel", "stylesheet");
-            fileref.setAttribute("type", "text/css");
-            fileref.setAttribute("href", CSSfile);
-            document.getElementsByTagName("head")[0].appendChild(fileref);
-        }
+            $("div.row.divider:not(:first)", this).hide();
+        });
+    } else {
+        $("div.row.divider:not(:first)").children().appendTo("div.row.divider:first");
+        $("div.row.divider:not(:first)").hide();
     }
 }
 
-function unloadThemeFeatureFiles(featureName)
-{
-    $('head link[href*=' + featureName + ']').remove();
-    $('head script[src*=' + featureName + ']').remove();
+function setLogo() {
+    let containerLogo = '<header class="logo"><div class="container-logo">';
+    if (theme.logo && theme.logo.length) {
+        containerLogo += '<img class="header__icon" src="acttheme/images/' + theme.logo + '"';
+        $("<style>#login:before {content: url(../images/" + theme.logo + ") !important;}</style>").appendTo("head");
+    } else {
+        containerLogo += '<img class="header__icon" src="acttheme/images/logo.png">';
+        $("<style>#login:before {content: url(../images/logo.png) !important;}</style>").appendTo("head");
+    }
+    containerLogo += "</div></header>";
+    $(containerLogo).insertBefore(".navbar-inner");
+}
+
+function setSearch() {
+    $('<div id="search"><input type="text" id="searchInput" autocomplete="off" onkeyup="searchFunction()" placeholder="' + language.type_to_search + '" title="' + language.type_to_search + '"><i class="ion-md-search"></i></div>').appendTo(".container-logo");
+    window.addEventListener("keydown",function (e) {
+        if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+            $("#searchInput").focus();
+            e.preventDefault();
+        }
+    })
+    $("#search").click(function() {
+        $("#searchInput").focus();
+    });
+    $("#searchInput").keyup(function(event) {
+        if (event.keyCode === 13) {
+            $("#searchInput").blur();
+        }
+        if (event.keyCode === 27) {
+            $("#searchInput").val("");
+            $("#searchInput").keyup();
+        }
+    });
+
 }
 
 function searchFunction() {
-	if ($('#dashcontent') || $('lightcontent') || $('scenecontent')|| $('utilitycontent') || $('weatherwidgets') || $('tempwidgets')){
-		var value = $('#searchInput').val().toLowerCase();
-		$("div .item").filter(function() {
-		  $(this).toggle($(this).find('#name').html().toLowerCase().indexOf(value) > -1)
-		});
-    };
-};
-
-function DelRow() {
-	$('#main-view div.row').each(function(){
-		x=$(this).nextAll().children().detach();
-		$(this).append(x).nextAll().remove();
-		console.log('suppression de multiple row');
-	});
+    var value = $("#searchInput").val().toLowerCase();
+    $("div .item").filter(function() {
+        var element = $(this);
+        if ($("#dashcontent").length || $("#weatherwidgets").length || $("#tempwidgets").length) {
+            element = $(this).parent();
+        }
+        element.toggle($(this).find("#name").html().toLowerCase().indexOf(value) > -1);
+    });
+    $(".mobileitem tr").filter(function() {
+        $(this).toggle($(this).html().toLowerCase().indexOf(value) > -1);
+    });
+    removeEmptySectionDashboard();
 }
 
 function locationHashChanged() {
-    if ( location.hash === "#/LightSwitches" || "#/DashBoard" ) {
-		var changeclass = false;
-		observer.disconnect();
-		observer.observe(targetedNode, {
-			childList: true,
-			subtree: true
-		});
-		
+    setPageTitle();
+    $(".current_page_item:not(:first)").removeClass("current_page_item");
+    $("#searchInput").val("");
+
+    if (location.hash == "#/Dashboard" && !isMobile || location.hash == "#/LightSwitches" || location.hash == "#/Scenes" || location.hash == "#/Temperature" || location.hash == "#/Weather" || location.hash == "#/Utility") {
+        $("#search").removeClass("readonly");
     } else {
-			console.log('Page change for: ' + location.hash);
-		
+        $("#search").addClass("readonly");
+    }
+    if ((location.hash == "#/Dashboard") && theme.features.dashboard_camera.enabled) {
+        theme.features.dashboard_camera_section && cameraPreview(theme.features.dashboard_camera_section.enabled);
+    }
+    if (location.hash == "#/CustomIcons") {
+        setCustomIconsPage();
     }
 }
 
-function showTime(){
-    var date = new Date();
-    var h = date.getHours(); // 0 - 23
-    var m = date.getMinutes(); // 0 - 59
-    var s = date.getSeconds(); // 0 - 59
-	var day = date.getDate();
-	var mo = date.getMonth();
-	var y = date.getFullYear();
-	
-	mo = mo + 1;
-	mo = (mo < 10) ? "0" + mo : mo;
-    day = (day < 10) ? "0" + day : day;
-	
-	textDate = y +"-"+ mo +"-" + day
-
-    h = (h < 10) ? "0" + h : h;
-    m = (m < 10) ? "0" + m : m;
-    s = (s < 10) ? "0" + s : s;
-    
-    var time = h + ":" + m + ":" + s;
-    document.getElementById("MyClockDisplay").innerText = time;
-    document.getElementById("MyClockDisplay").textContent = time;
-	document.getElementById("MyDateDisplay").innerText = textDate;
-    
-    setTimeout(showTime, 1000);
-    
-}
-// Notifications
-function notify(key, type) { // type = 0 = only in notification log, 1 = only notification popup, 2 = in both
-
-	if (type == 0 || type == 2){ 
-		var existing = localStorage.getItem('notify');
-		existing = existing ? JSON.parse(existing) : {};
-		let d = new Date();
-		dd = d.getTime();
-		existing[key] = dd;
-		localStorage.setItem('notify', JSON.stringify(existing));
-		
-		$('#notyIcon').show();
-	}
-	if (type == 1 || type == 2){
-		if (type == 1)$('#notyIcon').show();
-		let width = window.innerWidth;
-		if (width > 767) {
-			$('#notyIcon').notify(key);
-		} else {
-			$('#notyIcon').notify(key, {
-				position: "right",
-				className: 'info'
-			});
-		}
-		if (type == 1)$('#notyIcon').hide();
-	}
-}
-function clearNotify(){
-    if (typeof(Storage) !== "undefined") {
-		localStorage.removeItem('notify');
-		$('#notyIcon').hide();
+function notify(key, type) {
+    if (theme.features.notification.enabled === true) {
+        if (type == 0 || type == 2) {
+            var existing = localStorage.getItem(themeFolder + ".notify");
+            existing = existing ? JSON.parse(existing) : {};
+            let d = new Date();
+            dd = d.getTime();
+            existing[key] = dd;
+            localStorage.setItem(themeFolder + ".notify", JSON.stringify(existing));
+            $("#notyIcon").show();
+        }
+        if (type == 1 || type == 2) {
+            if (type == 1) $("#notyIcon").show();
+            let width = window.innerWidth;
+            if (width > 767) {
+                $("#notyIcon").notify(key);
+            } else {
+                $("#notyIcon").notify(key, {
+                    position: "right",
+                    className: "info"
+                });
+            }
+            if (type == 1) $("#notyIcon").hide();
+        }
     }
 }
-function CheckDomoticzUpdate(showdialog) {
-	$.ajax({
-		 url: "json.htm?type=command&param=checkforupdate&forced=" + showdialog,
-		 async: false,
-		 dataType: 'json',
-		 success: function(data) {
-			if (data.HaveUpdate == true) {
-				msgtxt = 'Domoticz version #' + data.Revision + ' '+ language.is_available +'!';
-				msgtxt+=' <a onclick="CheckForUpdate(true);">' + language.update_now + '</a>';
-				notify(msgtxt, 0);
-			}
-		 }
-	});
-	return false;
-}
-var timeOut = [];
-function timedOut(idx, value, device) {
-	let textmsg = 'Sensor ' + device.Name + ' ' + language.is + ' ' + language.timedout;
-	if (typeof(timeOut[idx]) !== 'undefined' && value !== timeOut[idx]) {
-		if (device.HaveTimeout) {
-			notify(textmsg, 2);
-		}
-	}
-	timeOut[idx] = value;
-}
-var oldstates = [];
-function triggerChange(idx, value, device) {
-	let textmsg = device.Name + ' ' + language.is + ' ' + $.t(device.Data);
-	let textLowBattery = device.Name + ' ' + $.t('Battery Level') + ' ' + $.t('Low') + ' ' + device.BatteryLevel + '%'
 
-		if (typeof(oldstates[idx]) !== 'undefined' && value !== oldstates[idx]) {
-			getnotifications(idx, device.Data)
-			if (device.BatteryLevel < 11) {
-				notify(textLowBattery, 2);
-			}
-		}
+function clearNotify() {
+    if (typeof Storage !== "undefined") {
+        localStorage.removeItem(themeFolder + ".notify");
+        $("#notyIcon").hide();
+    }
+}
 
-		oldstates[idx] = value;
+function checkDomoticzUpdate(showdialog) {
+    $.ajax({
+        url: "json.htm?type=command&param=checkforupdate&forced=" + showdialog,
+        dataType: "json",
+        success: function(data) {
+            if (data.HaveUpdate == true) {
+                msgtxt = "Domoticz version #" + data.Revision + " " + language.is_available + "!";
+                msgtxt += ' <a onclick="CheckForUpdate(true);">' + language.update_now + "</a>";
+                notify(msgtxt, 0);
+            }
+        }
+    });
+    return false;
 }
-function getnotifications(idx, state) {
-	
-	var msg;
-	$.ajax({
-		url: 'json.htm?type=notifications&idx=' + idx + '',
-		cache: false,
-		async: false,
-		dataType: 'json',
-		success: function (data) {
-			var message = data.result;
-			for (r in data.result) {
-				system = message[r].ActiveSystems
-				if (system.includes("browser")) {
-					if (typeof(message) !== 'undefined') {
-						if (state == 'On' || state == 'Open' || state == 'Locked') {
-							if (message[r].Params == "S") {
-								msg = message[r].CustomMessage;
-								notify(msg, 1);
-							}
-						}
-						if (state == 'Off' || state == 'Closed' || state == 'Unlocked') {
-							if (message[r].Params == "O") {
-								msg = message[r].CustomMessage;
-								notify(msg, 1);
-							}
-						}
-					}
-				}
-			}
-		}
-	});
+
+function getNotifications(idx, state) {
+    var msg;
+    $.ajax({
+        url: "json.htm?type=notifications&idx=" + idx + "",
+        cache: false,
+        async: false,
+        dataType: "json",
+        success: function(data) {
+            var message = data.result;
+            for (let r in data.result) {
+                if (typeof message !== "undefined") {
+                    var system = message[r].ActiveSystems;
+                    if (system.includes("browser")) {
+                        if (state == "On" || state == "Open" || state == "Locked") {
+                            if (message[r].Params == "S") {
+                                msg = message[r].CustomMessage;
+                                notify(msg, 1);
+                            }
+                        }
+                        if (state == "Off" || state == "Closed" || state == "Unlocked") {
+                            if (message[r].Params == "O") {
+                                msg = message[r].CustomMessage;
+                                notify(msg, 1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
-function getStatus(dialog) {
-	setInterval(function () {
-		checkauth();
-		$.ajax({
-			url: 'json.htm?type=devices&filter=all&used=' + dialog + '&order=Name',
-			cache: false,
-			async: false,
-			dataType: 'json',
-			success: function (data) {
-				for (r in data.result) {
-					var device = data.result[r];
-					var idx = device.idx;
-					if (device.Type === 'Group' || device.Type === 'Scene')
-						idx = '0.' + device.idx;
-					triggerChange(idx, device.LastUpdate, device);
-					timedOut(idx, device.HaveTimeout, device);
-				}
-			}
-		});
-	}, 5000);
+
+function displayNotifications() {
+    var msg = localStorage.getItem(themeFolder + ".notify");
+    msg = JSON.parse(msg);
+    var myObj = msg;
+    msgCount = 0;
+    $("#notify").append('<div id="msg" class="msg"><ul></ul><center><a class="btn btn-info" onclick="clearNotify();">' + (typeof $.t === "undefined" ? "Clear" : $.t("Clear")) + "</a></center></div>");
+    for (let x in myObj) {
+        $("#msg ul").append("<li>" + x + "<span> -- " + moment(myObj[x]).fromNow() + "</span></li>");
+        msgCount++;
+        $("#notyIcon").prop("title", language.you_have + " " + msgCount + " " + language.messages);
+        $("#notyIcon").attr("data-msg", msgCount);
+    }
+    $("#msg").hide();
 }
-var adminRights = false;
-function checkauth(){
-	$.ajax({url: 'json.htm?type=command&param=getauth' , cache: false, async: false, dataType: 'json', success: function(data) {
-		permission = data.rights
-		if (permission == 2){
-			adminRights = true;
-		}else{
-			adminRights = false;	
-		}
-	}
-	});
+
+function setPageTitle() {
+    var pagedetect = window.location.href.split("#/")[1];
+    var title = (typeof $.t !== "undefined" ? $.t(pagedetect) : pagedetect );
+    document.title = 'Domoticz - ' + title;
+}
+
+function isAdmin() {
+    if (typeof angular !== "undefined") {
+        var injector = angular.element($("html")).injector();
+        var permissions = injector.get("permissions");
+        return permissions.hasPermission("Admin");
+    } else return false;
+}
+
+function removeEmptySectionDashboard() {
+    $("#dashcontent section").each(function() {
+        $(this).show();
+        if (!$(this).children("div.row").children(":visible").length) {
+            $(this).hide();
+        }
+    });
+}
+
+function setCustomIconsPage() {
+     checkIconsmain = setInterval(function() {
+        if ($("#iconsmain #fileupload").length && $("#iconsmain label.fileupload").length === 0) {
+            clearInterval(checkIconsmain);
+   
+            $("#iconsmain #fileupload").parent().prepend('<label for="fileupload" class="fileupload btn btn-info">' + $.t("Upload") + "</label>");
+            $("#iconsmain > div table:first").find("td:last").append($("#iconsmain > table td:last").children());
+            $("#iconsmain #fileupload").on("change", function() {
+                $(this).next().click();
+                $(this).val("");
+            });
+        }
+    }, 100);
+}
+
+function ajaxSuccessCallback(event, xhr, settings) {
+    setPageTitle();
+    if (theme.features.notification.enabled === true && $("#msg").length == 0) {
+        displayNotifications();
+    }
+    if (settings.url.startsWith("json.htm?type=devices") || settings.url.startsWith("json.htm?type=scenes")) {
+        let counter = 0;
+        let intervalId = setInterval(function() {
+            if ($("#main-view").find(".item").length > 0) {
+                setAllDevicesFeatures();
+                setAllDevicesIconsStatus();
+                clearInterval(intervalId);
+            } else {
+                counter++;
+                if (counter >= 5) {
+                    clearInterval(intervalId);
+                }
+            }
+            setDevicesNativeSelectorForMobile();
+        }, 100);
+    } else if (settings.url.startsWith("json.htm?type=command&param=switchscene")) {
+        let id = settings.url.split("&")[2];
+        id = id.substr(4);
+        let scene = $(".item#" + id);
+        let statusElem = scene.find("#status .wrapper");
+        statusElem.hide();
+        let switcher = statusElem.parent().siblings(".switch").find("input");
+        if (switcher.length) {
+            let statusText = settings.url.split("&")[3];
+            statusText = statusText.substr(10);
+            switcher.attr("checked", statusText == "On");
+        }
+    }
 }

@@ -1,6 +1,6 @@
 # Machinon theme
 
-[![Join the chat at https://gitter.im/machinon-domoticz_theme/community](https://badges.gitter.im/machinon-domoticz_theme/community.svg)](https://gitter.im/machinon-domoticz_theme/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) ![alt tag](https://img.shields.io/badge/dynamic/json.svg?label=Version&url=https%3A%2F%2Fraw.githubusercontent.com%2FEdddieN%2Fmachinon-domoticz_theme%2Fmaster%2Ftheme.json&query=version&colorB=blue)
+[![Join the chat at https://gitter.im/machinon-domoticz_theme/community](https://badges.gitter.im/machinon-domoticz_theme/community.svg)](https://gitter.im/machinon-domoticz_theme/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) ![alt tag](https://img.shields.io/badge/dynamic/json.svg?label=Version&url=https%3A%2F%2Fraw.githubusercontent.com%2FEdddieN%2Fmachinon-domoticz_theme%2Fmaster%2Ftheme.json&query=version&colorB=blue) [![DeepScan grade](https://deepscan.io/api/teams/5668/projects/7507/branches/77435/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=5668&pid=7507&bid=77435)
 
 # WORK IN PROGRESS
 
@@ -9,9 +9,9 @@ https://github.com/EdddieN/machinon
 
 ToDo
 - [X]   In Progress
-- [ ] 1.- Selector boxes, need update design -> Eddie
-- [ ] 2.- Hardware page and devices need updating -> guidelines in Zeplin
-- [X] 3.- Tiles with new text and bigger size values -> Eddie -> Zeplin
+- [X] 1.- Selector boxes, need update design
+- [X] 2.- Hardware page and devices need updating 
+- [X] 3.- Tiles with new text and bigger size values
 - [X] 4.- Settings page re-design -> Eddie 
 - [X] 5.- When a device is offline the tile should fade off, is this possible? -> Zeplin
 - [X] 6.- Timers screen -> Eddie -> Zeplin
@@ -21,7 +21,7 @@ ToDo
 Ideas (wish list)
 - [ ]   In Progress
 - [ ] 1.- Custom merge multiple metrics into one tile (ie: energy + trigger switch)
-- [X] 2.- Dark theme -> Work in progress
+- [X] 2.- Dark theme 
 
 
 ## Installing
@@ -56,9 +56,15 @@ git checkout beta
 
 ### Finally preview:
 
-![Idea of theme machinon](/idea_domoticz_machinon.jpg)
+![Idea of theme machinon](/images/readme/idea_domoticz_machinon.jpg)
 
-Suggested new setup layout - partly implemented
+Dark Theme
+![Dark Theme](/images/readme/dark_theme.png)
+
+Compact Dashboard with camera
+![Compact Dashboatd camera](/images/readme/compact_dash.png)
+
+New setup layout
 ![Suggested new Setup layout - not implemented yet](/images/unorganised/screen_references/setup.png)
 
 ## Cache problems:
